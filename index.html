@@ -9,7 +9,6 @@
         meSpeak.loadConfig("mespeak_config.json");
         meSpeak.loadVoice("voices/en/en.json");
         meSpeak.speak('hello Conrad');
-
     </script>
 
     <style>
@@ -43,13 +42,17 @@
         #images div {
             display: inline-block;
         }
-
+        
         #interval {
             margin-top: 200px;
         }
         
         #quiz div {
             padding: 20px;
+        }
+        
+        #quiz {
+            display: none;
         }
     </style>
 </head>
@@ -74,24 +77,18 @@
             </select>
         </div>
         <div id="player"></div>
-        
+
         <script>
-            google.load('search', '1');
+            /////////////////////////////////// YOUTUBE PLAYER STUFF ////////////////////////////////////////////
+            ///////////////////////////////////////////////////////////////////////////////////////////
 
-            var imageSearch;
-
-            // 2. This code loads the IFrame Player API code asynchronously.
             var tag = document.createElement('script');
 
             tag.src = "https://www.youtube.com/iframe_api";
             var firstScriptTag = document.getElementsByTagName('script')[0];
             firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-            // 3. This function creates an <iframe> (and YouTube player)
-            //    after the API code downloads.
             var player;
-
-            var words = "more,please,thanks,hello,bye,again,sorry,yes,no,eat,drink,go,stop,run,jump,walk,sleep,wash,kiss,open,close,push,pull,fix,broke,play,want,hug,love,hurt,tickle,give,gone,alldone,dance,help,fall,shake,see,watch,look,sit,stand,throw,catch,blow,cry,throw,swing,slide,climb,ride,rock,come,color,up,down,in,out,off,on,here,there,big,little,cold,loud,quiet,yucky,icky,scary,funny,silly,dirty,clean,gentle,wet,soft,fast,slow,color,red,blue,yellow,green,pink,orange,purple,black,white,brown,all,none,more,some,rest,1,2,3,me,mine,my,I,you,it,ball,book,train,bike,rain,bubbles,car,truck,boat,plane,baby,bowl,spoon,sock,shoe,shirt,trousers,hat,star,flower,house,tree,brush,towel,bath,chair,table,bed,blanket,light,cookie,cracker,chip,cheese,apple,banana,icecream,cereal,candy,milk,juice,water,dog,cat,fish,bird,duck,cow,horse,bunny,bear,pig,lion,elephant,giraffe,zebra,monkey,chicken,butterfly,bee,frog,snake";
 
             function onYouTubeIframeAPIReady() {
                 player = new YT.Player('player', {
@@ -110,143 +107,118 @@
                 });
             }
 
-            // 4. The API will call this function when the video player is ready.
             function onPlayerReady(event) {
                 event.target.playVideo();
             }
 
-            // 5. The API calls this function when the player's state changes.
-            //    The function indicates that when playing a video (state=1),
-            //    the player should play for six seconds and then stop.
             var done = false;
 
             function onPlayerStateChange(event) {
                 if (event.data == YT.PlayerState.PLAYING && !done) {
-                    setTimeout(stopVideo, 5000);
+                    setTimeout(timerTimeout, 5000);
                     done = true;
                 }
             }
 
-            function stopVideo() {
-                player.pauseVideo();
-                var w = getWord();
-                // Create an Image Search instance.
-                imageSearch = new google.search.ImageSearch();
-                imageSearch.setRestriction(
-                    google.search.Search.RESTRICT_SAFESEARCH,
-                    google.search.Search.SAFESEARCH_STRICT
-                );
+            function playVideo() {
+                if (player) {
+                    $('#player').show();
+                    player.playVideo();
+                    var interval = $('#interval').val();
+                    setTimeout(timerTimeout, interval);
+                    $('#quiz').hide();
+                    $('body').css('background-color', 'black');
+                }
+            }
 
-                // Set searchComplete as the callback function when a search is 
-                // complete.  The imageSearch object will have results in it.
-                imageSearch.setSearchCompleteCallback(this, searchComplete, null);
-                imageSearch.execute(w);
-                $("#question").html(w);
-                meSpeak.speak('ok Conrad, can you type the word, ' + w);
-                $('input.answer').val("");
+            function timerTimeout() {
+                player.pauseVideo();
                 $('#player').hide();
                 $('#quiz').show();
+                startQuiz();
                 $('body').css('background-color', 'white');
-                $('input.answer').focus();
-
             }
 
-            function makeid() {
-                var text = "";
-                var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-                for (var i = 0; i < 5; i++)
-                    text += possible.charAt(Math.floor(Math.random() * possible.length));
 
-                return text;
-            }
+
+
+            /////////////////////////////////// QUIZ STUFF ////////////////////////////////////////////
+            ///////////////////////////////////////////////////////////////////////////////////////////
+
+
+            google.load('search', '1');
+
+            var imageSearch;
+
+            var words = "more,please,thanks,hello,bye,again,sorry,yes,no,eat,drink,go,stop,run,jump,walk,sleep,wash,kiss,open,close,push,pull,fix,broke,play,want,hug,love,hurt,tickle,give,gone,alldone,dance,help,fall,shake,see,watch,look,sit,stand,throw,catch,blow,cry,throw,swing,slide,climb,ride,rock,come,color,up,down,in,out,off,on,here,there,big,little,cold,loud,quiet,yucky,icky,scary,funny,silly,dirty,clean,gentle,wet,soft,fast,slow,color,red,blue,yellow,green,pink,orange,purple,black,white,brown,all,none,more,some,rest,1,2,3,me,mine,my,I,you,it,ball,book,train,bike,rain,bubbles,car,truck,boat,plane,baby,bowl,spoon,sock,shoe,shirt,trousers,hat,star,flower,house,tree,brush,towel,bath,chair,table,bed,blanket,light,cookie,cracker,chip,cheese,apple,banana,icecream,cereal,candy,milk,juice,water,dog,cat,fish,bird,duck,cow,horse,bunny,bear,pig,lion,elephant,giraffe,zebra,monkey,chicken,butterfly,bee,frog,snake";
 
             function getWord() {
                 wordsArray = words.split(',');
                 return wordsArray[Math.floor(Math.random() * wordsArray.length)].toUpperCase();
             }
 
-            function reset() {
+            function startQuiz() {
+                var w = getWord();
 
-                if (player) {
-                    $('#player').show();
-                    player.playVideo();
-                    var interval = $('#interval').val();
-                    setTimeout(stopVideo, interval);
-                    $('#quiz').hide();
-                    $('body').css('background-color', 'black');
+                imageSearch = new google.search.ImageSearch();
+                imageSearch.setRestriction(
+                    google.search.Search.RESTRICT_SAFESEARCH,
+                    google.search.Search.SAFESEARCH_STRICT
+                );
+
+                imageSearch.setSearchCompleteCallback(this, searchComplete, null);
+                imageSearch.execute(w);
+
+                $("#question").html(w);
+                meSpeak.speak('ok Conrad, can you type the word, ' + w);
+
+                $('input.answer').val("");
+
+                $('input.answer')
+                    .off('input.myQuiz')
+                    .on('input.myQuiz', quizInputChanged);
+
+                $('input.answer').focus();
+            }
+
+            function quizInputChanged(e) {
+                var s = $('input.answer').val().toUpperCase();
+                var w = $('#question').html();
+
+                for (var i = 0; i < w.length && i < s.length; i++) {
+                    if (s.charAt(i) != w.charAt(i)) {
+                        s = s.substr(0, i);
+
+                        break;
+                    }
+                }
+                $('input.answer').val(s);
+                if (s == w) {
+                    meSpeak.speak('Yes Conrad! You did it!', {}, playVideo);
                 }
             }
 
-            function speakFinished() {
-                reset();
-            }
-
-
-
-            $(document).ready(function() {
-                $("#question").html(getWord());
-                $('#quiz').hide();
-                $('input.answer').on('input', function(e) {
-                    var s = $('input.answer').val().toUpperCase();
-                    var w = $('#question').html();
-
-                    for (var i = 0; i < w.length && i < s.length; i++) {
-                        if (s.charAt(i) != w.charAt(i)) {
-                            s = s.substr(0, i);
-
-                            break;
-                        }
-                    }
-                    $('input.answer').val(s);
-                    //meSpeak.speak(s.charAt(s.length - 1).toLowerCase());
-                    if (s == w) {
-                        meSpeak.speak('Yes Conrad! You did it!', {}, speakFinished);
-
-                    }
-                });
-            });
-
-
             function searchComplete() {
-
-                // Check that we got results
                 if (imageSearch.results && imageSearch.results.length > 0) {
-
-                    // Grab our content div, clear it.
                     var contentDiv = document.getElementById('images');
                     contentDiv.innerHTML = '';
 
-                    // Loop through our results, printing them to the page.
                     var results = imageSearch.results;
                     for (var i = 0; i < 4; i++) {
-                        // For each result write it's title and image to the screen
                         var result = results[i];
                         var imgContainer = document.createElement('div');
-                        //var title = document.createElement('div');
-
 
                         var newImg = document.createElement('img');
 
-                        // There is also a result.url property which has the escaped version
                         newImg.src = result.tbUrl;
 
                         imgContainer.appendChild(newImg);
 
-                        // Put our title + image in the content
                         contentDiv.appendChild(imgContainer);
                     }
-
-                    // Now add links to additional pages of search results.
-                    // addPaginationLinks(imageSearch);
                 }
             }
-
-            function OnLoad() {
-
-            }
-            google.setOnLoadCallback(OnLoad);
-
         </script>
     </div>
 </body>
