@@ -135,7 +135,8 @@
                 player.pauseVideo();
                 $('#player').hide();
                 $('#quiz').show();
-                startQuiz();
+                var quiz = new typingQuiz();
+                quiz.start();
                 $('body').css('background-color', 'white');
             }
 
@@ -145,77 +146,82 @@
 
             /////////////////////////////////// QUIZ STUFF ////////////////////////////////////////////
             ///////////////////////////////////////////////////////////////////////////////////////////
-
-
             google.load('search', '1');
 
-            var imageSearch;
+            function typingQuiz() {
+                
 
-            var words = "more,please,thanks,hello,bye,again,sorry,yes,no,eat,drink,go,stop,run,jump,walk,sleep,wash,kiss,open,close,push,pull,fix,broke,play,want,hug,love,hurt,tickle,give,gone,alldone,dance,help,fall,shake,see,watch,look,sit,stand,throw,catch,blow,cry,throw,swing,slide,climb,ride,rock,come,color,up,down,in,out,off,on,here,there,big,little,cold,loud,quiet,yucky,icky,scary,funny,silly,dirty,clean,gentle,wet,soft,fast,slow,color,red,blue,yellow,green,pink,orange,purple,black,white,brown,all,none,more,some,rest,1,2,3,me,mine,my,I,you,it,ball,book,train,bike,rain,bubbles,car,truck,boat,plane,baby,bowl,spoon,sock,shoe,shirt,trousers,hat,star,flower,house,tree,brush,towel,bath,chair,table,bed,blanket,light,cookie,cracker,chip,cheese,apple,banana,icecream,cereal,candy,milk,juice,water,dog,cat,fish,bird,duck,cow,horse,bunny,bear,pig,lion,elephant,giraffe,zebra,monkey,chicken,butterfly,bee,frog,snake";
+                this.imageSearch = 0;
 
-            function getWord() {
-                wordsArray = words.split(',');
-                return wordsArray[Math.floor(Math.random() * wordsArray.length)].toUpperCase();
-            }
+                this.words = "more,please,thanks,hello,bye,again,sorry,yes,no,eat,drink,go,stop,run,jump,walk,sleep,wash,kiss,open,close,push,pull,fix,broke,play,want,hug,love,hurt,tickle,give,gone,alldone,dance,help,fall,shake,see,watch,look,sit,stand,throw,catch,blow,cry,throw,swing,slide,climb,ride,rock,come,color,up,down,in,out,off,on,here,there,big,little,cold,loud,quiet,yucky,icky,scary,funny,silly,dirty,clean,gentle,wet,soft,fast,slow,color,red,blue,yellow,green,pink,orange,purple,black,white,brown,all,none,more,some,rest,1,2,3,me,mine,my,I,you,it,ball,book,train,bike,rain,bubbles,car,truck,boat,plane,baby,bowl,spoon,sock,shoe,shirt,trousers,hat,star,flower,house,tree,brush,towel,bath,chair,table,bed,blanket,light,cookie,cracker,chip,cheese,apple,banana,icecream,cereal,candy,milk,juice,water,dog,cat,fish,bird,duck,cow,horse,bunny,bear,pig,lion,elephant,giraffe,zebra,monkey,chicken,butterfly,bee,frog,snake";
 
-            function startQuiz() {
-                var w = getWord();
+                this.start = function () {
+                    var w = this.getWord();
 
-                imageSearch = new google.search.ImageSearch();
-                imageSearch.setRestriction(
-                    google.search.Search.RESTRICT_SAFESEARCH,
-                    google.search.Search.SAFESEARCH_STRICT
-                );
+                    this.imageSearch = new google.search.ImageSearch();
+                    this.imageSearch.setRestriction(
+                        google.search.Search.RESTRICT_SAFESEARCH,
+                        google.search.Search.SAFESEARCH_STRICT
+                    );
 
-                imageSearch.setSearchCompleteCallback(this, searchComplete, null);
-                imageSearch.execute(w);
+                    this.imageSearch.setSearchCompleteCallback(this, this.searchComplete, null);
+                    this.imageSearch.execute(w);
 
-                $("#question").html(w);
-                meSpeak.speak('ok Conrad, can you type the word, ' + w);
+                    $("#question").html(w);
+                    meSpeak.speak('ok Conrad, can you type the word, ' + w);
 
-                $('input.answer').val("");
+                    $('input.answer').val("");
 
-                $('input.answer')
-                    .off('input.myQuiz')
-                    .on('input.myQuiz', quizInputChanged);
+                    $('input.answer')
+                        .off('input.myQuiz')
+                        .on('input.myQuiz', this.quizInputChanged);
 
-                $('input.answer').focus();
-            }
+                    $('input.answer').focus();
+                };
 
-            function quizInputChanged(e) {
-                var s = $('input.answer').val().toUpperCase();
-                var w = $('#question').html();
+                
+                this.getWord = function() {
+                    wordsArray = this.words.split(',');
+                    return wordsArray[Math.floor(Math.random() * wordsArray.length)].toUpperCase();
+                }
 
-                for (var i = 0; i < w.length && i < s.length; i++) {
-                    if (s.charAt(i) != w.charAt(i)) {
-                        s = s.substr(0, i);
 
-                        break;
+                this.quizInputChanged = function(e) {
+                    var s = $('input.answer').val().toUpperCase();
+                    var w = $('#question').html();
+
+                    for (var i = 0; i < w.length && i < s.length; i++) {
+                        if (s.charAt(i) != w.charAt(i)) {
+                            s = s.substr(0, i);
+
+                            break;
+                        }
+                    }
+                    $('input.answer').val(s);
+                    if (s == w) {
+                        meSpeak.speak('Yes Conrad! You did it!', {}, playVideo);
                     }
                 }
-                $('input.answer').val(s);
-                if (s == w) {
-                    meSpeak.speak('Yes Conrad! You did it!', {}, playVideo);
-                }
-            }
 
-            function searchComplete() {
-                if (imageSearch.results && imageSearch.results.length > 0) {
-                    var contentDiv = document.getElementById('images');
-                    contentDiv.innerHTML = '';
+                
+                this.searchComplete = function() {
+                    if (this.imageSearch.results && this.imageSearch.results.length > 0) {
+                        var contentDiv = document.getElementById('images');
+                        contentDiv.innerHTML = '';
 
-                    var results = imageSearch.results;
-                    for (var i = 0; i < 4; i++) {
-                        var result = results[i];
-                        var imgContainer = document.createElement('div');
+                        var results = this.imageSearch.results;
+                        for (var i = 0; i < 4; i++) {
+                            var result = results[i];
+                            var imgContainer = document.createElement('div');
 
-                        var newImg = document.createElement('img');
+                            var newImg = document.createElement('img');
 
-                        newImg.src = result.tbUrl;
+                            newImg.src = result.tbUrl;
 
-                        imgContainer.appendChild(newImg);
+                            imgContainer.appendChild(newImg);
 
-                        contentDiv.appendChild(imgContainer);
+                            contentDiv.appendChild(imgContainer);
+                        }
                     }
                 }
             }
