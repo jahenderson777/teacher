@@ -71,7 +71,7 @@
                 <input class='answer' type="text"></input>
             </div>
             <select id='interval'>
-                <option value="30000">30s</option>
+                <option value="90000">1m30s</option>
                 <option value="60000">1min</option>
                 <option value="120000">2mins</option>
                 <option value="300000">5mins</option>
@@ -133,11 +133,20 @@
                 }
             }
 
+            var count = 0;
+            
             function timerTimeout() {
                 player.pauseVideo();
                 $('#player').hide();
                 $('#quiz').show();
-                var quiz = new typingQuiz();
+                count++;
+                var quiz;
+                if (count % 2 == 0) {
+                    quiz = new typingQuiz();
+                }
+                else {
+                    quiz = new countingQuiz();
+                }
                 quiz.start();
                 $('body').css('background-color', 'white');
             }
@@ -161,6 +170,13 @@
                 imageSearch.execute(phrase);
             }
 
+            var meSpeakId = 0;
+            
+            function speak(phrase, options, callback) {
+                meSpeak.stop();
+                meSpeakId = meSpeak.speak(phrase, options, callback);
+            }
+
 
 
             /////////////////////////////////// QUIZ STUFF ////////////////////////////////////////////
@@ -180,12 +196,12 @@
 
                 this.start = function() {
                     this.word = this.getWord();
-                    this.number = Math.floor(Math.random() * 5) + 1;
-
+                    this.number = Math.floor(Math.random() * 8) + 1;
+                    //$("#question").html('how many ' + this.word.toLowerCase() + 's are there?');
                     searchImages(this.word, this.searchComplete);
 
-                    meSpeak.speak('ok Conrad, how many ' + this.word + 's are there?');
-
+                    speak('ok Conrad, how many ' + this.word + 's are there?');
+                
                     $('input.answer').val("");
 
                     $('input.answer')
@@ -201,9 +217,9 @@
                     var s = $('input.answer').val();
 
                     if (s == "" + that.number) {
-                        meSpeak.speak('Yes Conrad! You did it!', {}, playVideo);
+                        speak('Yes Conrad! You did it!', {}, playVideo);
                     } else {
-                        meSpeak.speak('wrong answer.');
+                        speak('wrong answer.');
                         $('input.answer').val("");
                     }
                 }
@@ -233,7 +249,7 @@
             function typingQuiz() {
                 this.imageSearch = 0;
 
-                this.words = "more,please,thanks,hello,bye,again,sorry,yes,no,eat,drink,go,stop,run,jump,walk,sleep,wash,kiss,open,close,push,pull,fix,broke,play,want,hug,love,hurt,tickle,give,gone,alldone,dance,help,fall,shake,see,watch,look,sit,stand,throw,catch,blow,cry,throw,swing,slide,climb,ride,rock,come,color,up,down,in,out,off,on,here,there,big,little,cold,loud,quiet,yucky,icky,scary,funny,silly,dirty,clean,gentle,wet,soft,fast,slow,color,red,blue,yellow,green,pink,orange,purple,black,white,brown,all,none,more,some,rest,1,2,3,me,mine,my,I,you,it,ball,book,train,bike,rain,bubbles,car,truck,boat,plane,baby,bowl,spoon,sock,shoe,shirt,trousers,hat,star,flower,house,tree,brush,towel,bath,chair,table,bed,blanket,light,cookie,cracker,chip,cheese,apple,banana,icecream,cereal,candy,milk,juice,water,dog,cat,fish,bird,duck,cow,horse,bunny,bear,pig,lion,elephant,giraffe,zebra,monkey,chicken,butterfly,bee,frog,snake";
+                this.words = "more,please,thanks,hello,bye,again,sorry,yes,no,eat,drink,go,stop,run,jump,walk,sleep,wash,kiss,open,close,push,pull,fix,broke,play,want,hug,love,hurt,tickle,give,gone,alldone,dance,help,fall,shake,see,watch,look,sit,stand,throw,catch,blow,cry,throw,swing,slide,climb,ride,rock,come,color,up,down,in,out,off,on,here,there,big,little,cold,loud,quiet,yucky,icky,scary,funny,silly,dirty,clean,gentle,wet,soft,fast,slow,color,red,blue,yellow,green,pink,orange,purple,black,white,brown,all,none,more,some,rest,1,2,3,4,5,6,7,8,9,10,me,mine,my,I,you,it,ball,book,train,bike,rain,bubbles,car,truck,boat,plane,baby,bowl,spoon,sock,shoe,shirt,hat,star,flower,house,tree,brush,towel,bath,chair,table,bed,blanket,light,cookie,cracker,chip,cheese,apple,banana,icecream,cereal,candy,milk,juice,water,dog,cat,fish,bird,duck,cow,horse,bunny,bear,pig,lion,elephant,giraffe,zebra,monkey,chicken,butterfly,bee,frog,snake";
 
                 this.start = function() {
                     var w = this.getWord();
@@ -241,7 +257,7 @@
                     searchImages(w, this.searchComplete);
 
                     $("#question").html(w);
-                    meSpeak.speak('ok Conrad, can you type the word, ' + w + '... The first letter is, \'' + w.substr(0, 1).toUpperCase() + '\'');
+                    speak('ok Conrad, can you type the word, ' + w + '... The first letter is, \'' + w.substr(0, 1).toUpperCase() + '\'');
 
                     $('input.answer').val("");
 
@@ -269,15 +285,15 @@
                         if (s.charAt(i) != w.charAt(i)) {
                             s = s.substr(0, i);
                             mistake = true;
-                            meSpeak.speak('Oops. Look for the letter , ' + w.substr(i, 1).toUpperCase());
+                            speak('Oops. Look for the letter , ' + w.substr(i, 1).toUpperCase());
                             break;
                         }
                     }
                     if (i < w.length && !mistake)
-                        meSpeak.speak('Yes! Next letter is , ' + w.substr(i, 1).toUpperCase());
+                        speak('Yes! Next letter is , ' + w.substr(i, 1).toUpperCase());
                     $('input.answer').val(s);
                     if (s == w) {
-                        meSpeak.speak('Yes Conrad! You did it!', {}, playVideo);
+                        speak('Yes Conrad! You did it!', {}, playVideo);
                     }
                 }
 
