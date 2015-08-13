@@ -1,0 +1,105 @@
+<html>
+<head>
+<title>Learning Keys 1</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<style>
+body {
+    text-align: center;
+    font-family: sans-serif;
+    font-weight: bold;
+    font-size: 80px;
+}
+
+input[type="text"] {
+    text-align: center;
+    font-family: sans-serif;
+    font-weight: bold;
+    font-size: 80px;
+    appearance: none;
+    box-shadow: none;
+    border-radius: none;
+    width: 600px;
+}
+
+#images div {
+    display: inline-block;
+    padding: 18px;
+}
+</style>
+</head>
+<body>
+<div id='images'></div>
+<div id='question'></div>
+<div id='answer'>
+    <input class='answer' type="text"></input>
+</div>
+<script>
+
+
+words = "banana,apple,carrot,bird,dog,cat,bottle,tree,elephant,monkey,bike,castle";
+
+function getWord() {
+    wordsArray = words.split(',');
+    return wordsArray[Math.floor(Math.random() * wordsArray.length)].toUpperCase();
+}
+
+word = "";
+number = 0;
+
+
+this.searchComplete = function() {
+    if (parent.imageSearch.results && parent.imageSearch.results.length > 0) {
+        var contentDiv = document.getElementById('images');
+        contentDiv.innerHTML = '';
+
+        var results = parent.imageSearch.results;
+        for (var i = 0; i < number; i++) {
+            var result = results[0];
+            var imgContainer = document.createElement('div');
+
+            var newImg = document.createElement('img');
+
+            newImg.src = result.tbUrl;
+
+            imgContainer.appendChild(newImg);
+
+            contentDiv.appendChild(imgContainer);
+        }
+    }
+}
+
+var timeStart = new Date().getTime() / 1000;
+
+function quizInputChanged(e) {
+    var s = $('input.answer').val();
+
+    if (s == "" + number) {
+    	var timeEnd = new Date().getTime() / 1000;
+    	var score = number * 1000 / (timeEnd - timeStart);
+        parent.speak('Yes Conrad! You did it!', {},  function() { parent.complete(score); });
+    } else {
+        parent.speak('wrong answer.');
+        $('input.answer').val("");
+    }
+}
+
+$(function(){ 
+	word = getWord();
+    number = Math.floor(Math.random() * 8) + 1;
+    $("#question").html('');
+    //$("#question").html('how many ' + this.word.toLowerCase() + 's are there?');
+    parent.searchImages(word, searchComplete);
+
+    parent.speak('ok Conrad, how many ' + word + 's are there?');
+
+    $('input.answer').val("");
+
+    $('input.answer')
+        .off('input.myQuiz')
+        .on('input.myQuiz', quizInputChanged);
+
+    $('input.answer').focus();
+});
+</script>
+</body>
+</html>

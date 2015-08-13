@@ -1,0 +1,110 @@
+<html>
+<head>
+<title>Learning Keys 1</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<style>
+body {
+    text-align: center;
+    font-family: sans-serif;
+    font-weight: bold;
+    font-size: 80px;
+}
+
+input[type="text"] {
+    text-align: center;
+    font-family: sans-serif;
+    font-weight: bold;
+    font-size: 80px;
+    appearance: none;
+    box-shadow: none;
+    border-radius: none;
+    width: 600px;
+}
+
+#images div {
+    display: inline-block;
+    padding: 18px;
+}
+</style>
+</head>
+<body>
+<div id='images'></div>
+<div id='question'></div>
+<div id='answer'>
+    <input class='answer' type="text"></input>
+</div>
+<script>
+var words = "more,please,thanks,hello,bye,again,sorry,yes,no,eat,drink,go,stop,run,jump,walk,sleep,wash,kiss,open,close,push,pull,fix,broke,play,want,hug,love,hurt,tickle,give,gone,alldone,dance,help,fall,shake,see,watch,look,sit,stand,throw,catch,blow,cry,throw,swing,slide,climb,ride,rock,come,color,up,down,in,out,off,on,here,there,big,little,cold,loud,quiet,yucky,icky,scary,funny,silly,dirty,clean,gentle,wet,soft,fast,slow,color,red,blue,yellow,green,pink,orange,purple,black,white,brown,all,none,more,some,rest,1,2,3,4,5,6,7,8,9,10,me,mine,my,I,you,it,ball,book,train,bike,rain,bubbles,car,truck,boat,plane,baby,bowl,spoon,sock,shoe,shirt,hat,star,flower,house,tree,brush,towel,bath,chair,table,bed,blanket,light,cookie,cracker,chip,cheese,apple,banana,icecream,cereal,candy,milk,juice,water,dog,cat,fish,bird,duck,cow,horse,bunny,bear,pig,lion,elephant,giraffe,zebra,monkey,chicken,butterfly,bee,frog,snake";
+
+function getWord() {
+    wordsArray = words.split(',');
+    return wordsArray[Math.floor(Math.random() * wordsArray.length)].toUpperCase();
+}
+
+var timeStart = new Date().getTime() / 1000;
+
+function quizInputChanged(e) {
+    var s = $('input.answer').val().toUpperCase();
+    var w = $('#question').html();
+
+    var i;
+    var mistake = false;
+    for (i = 0; i < w.length && i < s.length; i++) {
+        if (s.charAt(i) != w.charAt(i)) {
+            s = s.substr(0, i);
+            mistake = true;
+            parent.speak('Oops. Look for the letter , ' + w.substr(i, 1).toUpperCase());
+            break;
+        }
+    }
+    if (i < w.length && !mistake)
+        parent.speak('Yes! Next letter is , ' + w.substr(i, 1).toUpperCase());
+    $('input.answer').val(s);
+    if (s == w) {
+    	var timeEnd = new Date().getTime() / 1000;
+    	var score = w.length * 1000 / (timeEnd - timeStart);
+        parent.speak('Yes Conrad! You did it!', {}, function() { parent.complete(score); });
+    }
+}
+
+
+function searchComplete() {
+    if (parent.imageSearch.results && parent.imageSearch.results.length > 0) {
+        var contentDiv = document.getElementById('images');
+        contentDiv.innerHTML = '';
+
+        var results = parent.imageSearch.results;
+        for (var i = 0; i < 4; i++) {
+            var result = results[i];
+            var imgContainer = document.createElement('div');
+
+            var newImg = document.createElement('img');
+
+            newImg.src = result.tbUrl;
+
+            imgContainer.appendChild(newImg);
+
+            contentDiv.appendChild(imgContainer);
+        }
+    }
+}
+
+$(function(){ 
+	var w = getWord();
+
+	parent.searchImages(w, searchComplete);
+
+	$("#question").html(w);
+	parent.speak('ok Conrad, can you type the word, ' + w + '... The first letter is, \'' + w.substr(0, 1).toUpperCase() + '\'');
+
+	$('input.answer').val("");
+
+	$('input.answer')
+	    .off('input.myQuiz')
+	    .on('input.myQuiz', quizInputChanged);
+
+	$('input.answer').focus();
+});
+</script>
+</body>
+</html>
