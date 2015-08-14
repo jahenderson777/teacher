@@ -1,19 +1,93 @@
 <?php
 $db = new PDO('mysql:host=localhost;dbname=teacher;charset=utf8', 'teacher', 'greet7rain');
 
-function g($s) {
+function p($s) {
 	return urldecode($_POST[$s]);
+}
+function g($s) {
+	return urldecode($_GET[$s]);
+}
+
+$studentId = 1;
+
+function checkIfMastered() {
+	// needs to check if any of the scores are above the 'mastered' level for a quiz
+	// if so then need to get data from quiz_gives_skill and 
+	// insert records in student_has_skill for new skills learnt,
+	// don't update records but keep historical, and select max later on.
+}
+
+function getAvailableQuizes() {
+	// needs to join 'quiz' with 'quiz_needs_skill' and foreach quiz see if 
+	// the student has all the required skills at a high enough level,
+	// if so then this quiz is available, add it to a list of quizes that are available
+}
+
+function getStudentScores($student) {
+	global $db; 
+	$sql = "
+SELECT
+    a.quiz,
+    q.name,
+    AVG(score) AS score, 
+    AVG(time_taken) AS time_taken,
+    q.score_mastered 
+FROM (
+    SELECT 
+    	student, 
+    	quiz, 
+    	IF(@uid = (@uid := student) and @qid = (@qid := quiz), @auto:=@auto + 1, @auto := 1) autoNo, 
+    	score, 
+    	time_taken
+    FROM 
+    	result, 
+    	(SELECT @uid := 0, @qid := 0, @auto:= 1) A
+    WHERE
+    	student = :student
+    ORDER BY 
+    	student, quiz, datetime DESC
+    ) AS a
+	INNER JOIN quiz q ON q.id = a.quiz
+WHERE 
+	autoNo <= 10
+GROUP BY 
+	student, 
+    quiz;
+	";
+	$stmt = $db->prepare($sql);
+	$stmt->execute(array(':student' => $student));
+	return $stmt->fetchAll();
+}
+
+function array2Html($array)
+{
+	$out = '<table><tr>';
+	foreach ($array[0] as $key => $col) if (!is_int($key)) {
+			$out .= "<th>$key</th>";
+		}
+	$out .= '</tr>';
+	foreach ($array as $row) {
+		$out .= '<tr>';
+		foreach ($row as $key => $col) if (!is_int($key)) {
+			$out .= "<td>$col</td>";
+		}
+		$out .= '</tr>';
+	}
+    return $out . '</table>'; 
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-	$action = $_POST["action"];
-	if ($action == "logResult") {
+	if (p('action') == "logResult") {
 		$stmt = $db->prepare("INSERT INTO result (student, quiz, time_taken, score) VALUES (?,?,?,?)");
-		$stmt->execute(array(g('student'), g('quiz'), g('time_taken'), g('score')));
-		echo print_r($_POST);
-		echo "affected rows = " . $stmt->rowCount();
+		$stmt->execute(array(p('student'), p('quiz'), p('time_taken'), p('score')));
+		//echo print_r($_POST);
+		//echo print_r(getStudentScores($studentId));
+		//$stmt->rowCount();
+		echo array2Html(getStudentScores($studentId));
 	}
 	exit;
+} else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+
 }
 ?>
 
@@ -55,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php 
 foreach($db->query('SELECT * FROM quiz') as $row) {
-    echo $row['id'].' '.$row['url']; 
+    //echo $row['id'].' '.$row['url']; 
 }
 
 ?>
@@ -131,12 +205,10 @@ function getNextLesson() {
 	if (count % 2 == 0) {
 		currentLesson = 1;
 		return "lessons/learning_keys1.html";
-		
 	}
 	else {
 		currentLesson = 2;
 		return "lessons/counting1.html";
-		
 	}
 }
 
@@ -148,6 +220,7 @@ function timerTimeout() {
     count++;
     $('#quiz iframe').prop('src', getNextLesson());
     $('body').css('background-color', 'white');
+    finishedQuiz = false;
 }
 
 google.load('search', '1');
@@ -168,10 +241,15 @@ function speak(phrase, options, callback) {
     meSpeak.speak(phrase, options, callback);
 }
 
+var finishedQuiz = true;
+
 function complete(score) {
-	var timeEnd = new Date().getTime() / 1000;
-	logResult(1, currentLesson, score, timeEnd - timeStart);
-	playVideo();
+	if (finishedQuiz == false) {
+		finishedQuiz = true;
+		var timeEnd = new Date().getTime() / 1000;
+		logResult(1, currentLesson, score, timeEnd - timeStart);
+		playVideo();
+	}
 }
 
 function logResult(student, quiz, score, time_taken) {
@@ -186,7 +264,7 @@ function logResult(student, quiz, score, time_taken) {
 	    if(hr.readyState == 4 && hr.status == 200) {
 	    	console.log(hr);
 	        var return_data = hr.responseText;
-	        //document.getElementById("status").innerHTML = return_data;
+	        document.getElementById("status").innerHTML = return_data;
 	    }
 	}
 	hr.send(vars);
