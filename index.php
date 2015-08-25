@@ -10,21 +10,56 @@ function g($s) {
 
 $studentId = 1;
 
-function checkIfMastered() {
+function currentStudent() {
+	global $studentId;
+	return $studentId;
+}
+
+function query($sql, $params = array()) {
+	global $db;
+	$stmt = $db->prepare($sql);
+	$stmt->execute($params);
+	return $stmt->fetchAll();
+}
+
+function checkIfMastered($scores) {
 	// needs to check if any of the scores are above the 'mastered' level for a quiz
-	// if so then need to get data from quiz_gives_skill and 
+	// if so then (if we haven't already done so) need to get data from quiz_gives_skill and 
 	// insert records in student_has_skill for new skills learnt,
 	// don't update records but keep historical, and select max later on.
+	foreach ($scores as $row) {
+		if ($row['score'] >= $row['score_mastered']) {
+			foreach (query('select * from quiz_gives_skill qgs where qgs.quiz = :quiz', 
+				array(':quiz' => $row['quiz'])) as $qgs) {
+				query('insert ignore into student_has_skill (student, skill, level) 
+						values (:student, :skill, :level)',
+					array(':student' => currentStudent(), ':skill' => $qgs['skill'], ':level' => $qgs['level']));
+			}
+		}
+	}
 }
 
 function getAvailableQuizes() {
-	// needs to join 'quiz' with 'quiz_needs_skill' and foreach quiz see if 
-	// the student has all the required skills at a high enough level,
-	// if so then this quiz is available, add it to a list of quizes that are available
+	// quizes that are available and give a skill higher than what we've got already...
+	query('select q.* from quiz q 
+			inner join quiz_needs_skill qns on q.id = qns.quiz
+            inner join quiz_gives_skill qgs on q.id = qgs.quiz
+			inner join student_has_skill shs on qns.skill = shs.skill and shs.level >= qns.level
+            inner join student_has_skill shs2 on shs2.skill = shs.skill and shs2.level < qgs.level
+			where shs.student = :student', 
+			array(':student' => currentStudent()));
+
+	query('select q.* from quiz q 
+			inner join quiz_needs_skill qns on q.id = qns.quiz
+			inner join student_has_skill shs on qns.skill = shs.skill and shs.level >= qns.level
+			where shs.student = :student', 
+			array(':student' => currentStudent()));
+
+	query('select * from quiz 
+			where id NOT IN (SELECT quiz FROM quiz_needs_skill)');
 }
 
 function getStudentScores($student) {
-	global $db; 
 	$sql = "
 SELECT
     a.quiz,
@@ -54,9 +89,7 @@ GROUP BY
 	student, 
     quiz;
 	";
-	$stmt = $db->prepare($sql);
-	$stmt->execute(array(':student' => $student));
-	return $stmt->fetchAll();
+	return query($sql, array(':student' => $student));
 }
 
 function array2Html($array)
@@ -83,7 +116,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		//echo print_r($_POST);
 		//echo print_r(getStudentScores($studentId));
 		//$stmt->rowCount();
-		echo array2Html(getStudentScores($studentId));
+		$scores = getStudentScores($studentId);
+		checkIfMastered($scores);
+		echo array2Html($scores);
 	}
 	exit;
 } else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
